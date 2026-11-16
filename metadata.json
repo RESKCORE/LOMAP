@@ -1,0 +1,6 @@
+{
+  "name": "LOMAP",
+  "description": "LOMAP — Multi-platform driver mobility radar for Uber Driver, Rapido Captain, and Ola Driver with millisecond INR fare auto-acceptance, Google authentication, and cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

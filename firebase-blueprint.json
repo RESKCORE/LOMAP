@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "DriverProfile": {
+      "title": "DriverProfile",
+      "description": "Authenticated RidePilot driver profile and preferences synced per user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Driver display name from Google Sign-In or profile settings."
+        },
+        "email": {
+          "type": "string",
+          "description": "Driver Google account email."
+        },
+        "city": {
+          "type": "string",
+          "description": "Primary operating city in India."
+        },
+        "autoAcceptMillisTarget": {
+          "type": "integer",
+          "description": "Target millisecond threshold for instant auto-acceptance."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when profile was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when profile was last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "displayName", "city", "autoAcceptMillisTarget", "createdAt", "updatedAt"]
+    },
+    "CloudRideEvent": {
+      "title": "CloudRideEvent",
+      "description": "Cloud-synced ride evaluation and auto-acceptance telemetry record scoped to a driver.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "platformId": {
+          "type": "string",
+          "description": "Ride platform identifier (UBER, RAPIDO, OLA)."
+        },
+        "fareInr": {
+          "type": "number",
+          "description": "Evaluated ride fare in INR."
+        },
+        "isEligible": {
+          "type": "boolean",
+          "description": "Whether the ride matched the driver's selected INR fare range."
+        },
+        "acceptanceOutcome": {
+          "type": "string",
+          "description": "Outcome code (e.g. ACCEPTED_BY_AUTHORIZED_INTEGRATION, FILTERED_OUT)."
+        },
+        "responseLatencyMs": {
+          "type": "number",
+          "description": "Millisecond execution time for fare evaluation and auto-acceptance."
+        },
+        "pickupLocation": {
+          "type": "string",
+          "description": "Pickup locality summary."
+        },
+        "destinationLocation": {
+          "type": "string",
+          "description": "Destination locality summary."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when record was stored (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "platformId",
+        "fareInr",
+        "isEligible",
+        "acceptanceOutcome",
+        "responseLatencyMs",
+        "pickupLocation",
+        "destinationLocation",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/DriverProfile" },
+      "description": "Per-user driver profile document."
+    },
+    "/users/{userId}/ride_events/{eventId}": {
+      "schema": { "$ref": "#/entities/CloudRideEvent" },
+      "description": "Per-user cloud-synced ride evaluation and millisecond auto-acceptance logs."
+    }
+  }
+}

@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">LOMAP</string>
+    <string name="app_tagline">Multi-Platform Driver Mobility Radar</string>
+    <string name="currency_symbol">₹</string>
+    <string name="notification_listener_label">LOMAP Notification Monitor</string>
+    <string name="monitoring_channel_name">LOMAP Active Monitoring</string>
+    <string name="monitoring_channel_desc">Persistent status while LOMAP monitors incoming ride requests</string>
+    <string name="alerts_channel_name">LOMAP Fare &amp; Request Alerts</string>
+    <string name="alerts_channel_desc">High-priority alerts for eligible and filtered ride requests</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_platforms">Platforms</string>
+    <string name="nav_fares">Fares</string>
+    <string name="nav_activity">Activity</string>
+    <string name="nav_settings">Account</string>
+</resources>

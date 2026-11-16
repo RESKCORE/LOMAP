@@ -1,0 +1,137 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidDriverProfile(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 80 &&
+             (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 120)) &&
+             data.city is string &&
+             data.city.size() >= 1 &&
+             data.city.size() <= 80 &&
+             data.autoAcceptMillisTarget is int &&
+             data.autoAcceptMillisTarget >= 1 &&
+             data.autoAcceptMillisTarget <= 5000 &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidCloudRideEvent(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.platformId is string &&
+             data.platformId in ['UBER', 'RAPIDO', 'OLA'] &&
+             (data.fareInr is int || data.fareInr is float) &&
+             data.fareInr >= 0 &&
+             data.fareInr <= 100000 &&
+             data.isEligible is bool &&
+             data.acceptanceOutcome is string &&
+             data.acceptanceOutcome.size() >= 1 &&
+             data.acceptanceOutcome.size() <= 64 &&
+             (data.responseLatencyMs is int || data.responseLatencyMs is float) &&
+             data.responseLatencyMs >= 0 &&
+             data.responseLatencyMs <= 60000 &&
+             data.pickupLocation is string &&
+             data.pickupLocation.size() <= 160 &&
+             data.destinationLocation is string &&
+             data.destinationLocation.size() <= 160 &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'city', 'autoAcceptMillisTarget', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'city', 'autoAcceptMillisTarget', 'createdAt', 'updatedAt']) &&
+                       isValidDriverProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidDriverProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'city', 'autoAcceptMillisTarget', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /ride_events/{eventId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(eventId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(eventId) &&
+                         incoming().keys().hasAll([
+                           'userId',
+                           'platformId',
+                           'fareInr',
+                           'isEligible',
+                           'acceptanceOutcome',
+                           'responseLatencyMs',
+                           'pickupLocation',
+                           'destinationLocation',
+                           'createdAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId',
+                           'platformId',
+                           'fareInr',
+                           'isEligible',
+                           'acceptanceOutcome',
+                           'responseLatencyMs',
+                           'pickupLocation',
+                           'destinationLocation',
+                           'createdAt'
+                         ]) &&
+                         isValidCloudRideEvent(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(eventId) &&
+                         isValidCloudRideEvent(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().platformId == existing().platformId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['acceptanceOutcome']);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(eventId);
+      }
+    }
+  }
+}
